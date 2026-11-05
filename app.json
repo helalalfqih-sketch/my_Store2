@@ -3,12 +3,12 @@
     "name": "Indexes Store",
     "slug": "indexes-store",
     "scheme": "indexesstore",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.indexesstore.mobile",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": [
         "INTERNET"
       ],

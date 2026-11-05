@@ -21,12 +21,20 @@ export default function ProductListScreen({
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState('');
   const loadingMoreRef = useRef(false);
+  const listRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState(search.trim());
 
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(search.trim()), 350);
     return () => clearTimeout(handle);
   }, [search]);
+
+  // A single FlatList instance is reused by Home, Categories and search.
+  // Reset the viewport when its content context changes, otherwise opening
+  // Categories after browsing products displays the bottom of the grid.
+  useEffect(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [mode, selectedCategory, debouncedSearch]);
 
   const requestKey = [mode, selectedCategory, debouncedSearch, refreshVersion].join('|');
   const currentKey = useRef(requestKey);
@@ -138,6 +146,7 @@ export default function ProductListScreen({
 
   return (
     <FlatList
+      ref={listRef}
       style={styles.container}
       contentContainerStyle={styles.list}
       data={loading || error ? [] : items}

@@ -20,9 +20,9 @@ npx expo prebuild --platform android --no-install
 cd android && ./gradlew :app:assembleRelease
 ```
 
-GitHub Actions `.github/workflows/android-debug-apk.yml` builds an Android 0.2.1 APK with bundled JS, validates its package, SHA-256 and signature, and includes an emulator smoke-test job that checks launch, live product-card rendering, categories and cart while capturing screenshots. Check each job's status; native compilation alone does not demonstrate correct execution.
+GitHub Actions `.github/workflows/android-debug-apk.yml` builds an Android 0.2.2 APK with bundled JS, validates its package, SHA-256 and signature, and includes an emulator smoke-test job that checks launch, live product-card rendering, categories and cart while capturing screenshots. Check each job's status; native compilation alone does not demonstrate correct execution.
 
-Android app ID: `com.indexesstore.mobile`, version `0.2.1`, versionCode `3`. **Evaluation only**: signed with an ephemeral debug certificate, not a production identity. Earlier preview APKs may require uninstalling before installing this one.
+Android app ID: `com.indexesstore.mobile`, version `0.2.2`, versionCode `3`. **Evaluation only**: signed with an ephemeral debug certificate, not a production identity. Earlier preview APKs may require uninstalling before installing this one.
 
 ## Required integration
 
@@ -34,10 +34,14 @@ See [THEME_PORT.md](THEME_PORT.md) for source traceability, verification and blo
 
 License: [LICENSE.md](LICENSE.md).
 
-## Installing evaluation APK 0.2.1
+## Installing evaluation APK 0.2.2
 
-An older `0.2.0` APK was built without Shopify Storefront credentials. It will not update its embedded JavaScript when the GitHub repository changes. Install APK `0.2.1` (build 4). Because CI generates a different ephemeral debug signing certificate, you may need to uninstall older evaluation builds first. **Uninstalling deletes locally saved wishlist/cart IDs**; export or preserve any important device data before uninstalling. This is not a production signing/update strategy.
+An older `0.2.0` APK was built without Shopify Storefront credentials. It will not update its embedded JavaScript when the GitHub repository changes. Install APK `0.2.2` (build 4). Because CI generates a different ephemeral debug signing certificate, you may need to uninstall older evaluation builds first. **Uninstalling deletes locally saved wishlist/cart IDs**; export or preserve any important device data before uninstalling. This is not a production signing/update strategy.
 
 ## Finding products in the mobile UI
 
-On the native homepage, scroll **below the video banners and category carousel** to see the live `منتجات مختارة لك` grid. Version `0.2.1` embeds the connected public Storefront token and the emulator test confirms visible product cards with real images/prices. Older `0.2.0` test builds did not contain that configuration.
+On the native homepage, scroll **below the video banners and category carousel** to see the live `منتجات مختارة لك` grid. Version `0.2.2` embeds the connected public Storefront token and the emulator test confirms visible product cards with real images/prices. Older `0.2.0` test builds did not contain that configuration.
+
+## Cross-tab navigation regression
+
+On Android, the native homepage and Categories share a `FlatList`. When a shopper swipes down to real products and taps Categories, the list must return to offset 0 instead of retaining the homepage scroll position. The native list now resets its viewport when mode, category or search changes. The emulator E2E gate verifies that the categories-only subtitle becomes visible.
