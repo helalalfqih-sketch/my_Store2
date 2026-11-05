@@ -11,7 +11,11 @@
       "versionCode": 1,
       "permissions": [
         "INTERNET"
-      ]
+      ],
+      "splash": {
+        "backgroundColor": "#FFFFFF",
+        "resizeMode": "contain"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.indexesstore.mobile"
@@ -19,6 +23,19 @@
     "extra": {
       "buildPurpose": "evaluation-debug",
       "sourceRepo": "helalalfqih-sketch/my_Store2"
-    }
+    },
+    "splash": {
+      "backgroundColor": "#FFFFFF",
+      "resizeMode": "contain"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "resizeMode": "contain"
+        }
+      ]
+    ]
   }
 }
