@@ -4,7 +4,6 @@ import {
   StatusBar, StyleSheet, Text, View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ShopifyCheckoutSheetProvider } from '@shopify/checkout-sheet-kit';
 import ProductListScreen from './ProductListScreen';
 import ProductDetailScreen from './ProductDetailScreen';
 import CartScreen from './CartScreen';
@@ -152,15 +151,6 @@ function App() {
     performCartMutation(existing => removeCartLine(existing.id, lineId));
   };
 
-  const onOrderComplete = useCallback(() => {
-    cartRef.current = null;
-    setCart(null);
-    setCartError('');
-    setSelectedProduct(null);
-    setTab('home');
-    AsyncStorage.removeItem(STORAGE_CART_ID).catch(() => {});
-  }, []);
-
   const toggleFavorite = product => {
     setFavorites(previous => {
       const next = previous.some(item => item.id === product.id)
@@ -198,7 +188,6 @@ function App() {
   const mode = tab === 'wishlist' ? 'wishlist' : tab === 'categories' ? 'categories' : 'home';
 
   return (
-    <ShopifyCheckoutSheetProvider>
       <SafeAreaView style={styles.safe}>
         <StatusBar backgroundColor={colors.primary} barStyle="light-content" />
         <StoreHeader
@@ -229,7 +218,6 @@ function App() {
               onRetryRestore={restoreCart}
               onUpdateQuantity={changeLine}
               onRemoveLine={removeLine}
-              onOrderComplete={onOrderComplete}
               onBrowse={() => selectTab('home')}
             />
           ) : tab === 'account' ? (
@@ -250,7 +238,6 @@ function App() {
         </View>
         <BottomNavigation selected={tab} onSelect={selectTab} cartCount={cartCount} />
       </SafeAreaView>
-    </ShopifyCheckoutSheetProvider>
   );
 }
 
