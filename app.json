@@ -15,6 +15,10 @@
       "splash": {
         "backgroundColor": "#FFFFFF",
         "resizeMode": "contain"
+      },
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/indexes-app-512-maskable.png",
+        "backgroundColor": "#FFFFFF"
       }
     },
     "ios": {
@@ -38,6 +42,7 @@
           "resizeMode": "contain"
         }
       ]
-    ]
+    ],
+    "icon": "./assets/indexes-app-512.png"
   }
 }
