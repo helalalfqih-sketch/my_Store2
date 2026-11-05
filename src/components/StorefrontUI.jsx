@@ -1,8 +1,9 @@
 import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import {
   Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
-import { colors, categories, navigationItems } from '../theme/indexesTheme';
+import { brand, colors, categories, navigationItems } from '../theme/indexesTheme';
 import { discountPercent, firstAvailableVariant, money } from '../theme/catalogUtils';
 
 export function StoreHeader({ search, onSearch, onHome, onCategories, onCart, cartCount }) {
@@ -10,16 +11,16 @@ export function StoreHeader({ search, onSearch, onHome, onCategories, onCart, ca
     <View style={styles.header}>
       <View style={styles.headerBar}>
         <Pressable onPress={onCart} accessibilityRole="button" accessibilityLabel="فتح السلة" style={styles.cartIcon}>
-          <Text style={styles.headerSymbol}>▣</Text>
+          <Ionicons name="cart-outline" size={27} color="#fff" />
           {cartCount > 0 && <View style={styles.cartBadge}><Text style={styles.cartBadgeText}>{cartCount}</Text></View>}
         </Pressable>
-        <Pressable onPress={onHome} accessibilityRole="button" accessibilityLabel="اندكس ستور - الرئيسية">
-          <Text style={styles.brand}>INDEXES <Text style={styles.brandLight}>STORE</Text></Text>
+        <Pressable onPress={onHome} accessibilityRole="button" accessibilityLabel="اندكس ستور - الرئيسية" style={styles.logoContainer}>
+          <Image source={{ uri: brand.logo }} style={styles.brandLogo} resizeMode="contain" accessibilityLabel="شعار اندكس ستور" />
         </Pressable>
-        <Pressable onPress={onCategories} accessibilityRole="button" accessibilityLabel="فتح قائمة الأقسام"><Text style={styles.headerSymbol}>☰</Text></Pressable>
+        <Pressable onPress={onCategories} accessibilityRole="button" accessibilityLabel="فتح قائمة الأقسام" style={styles.menuButton}><Ionicons name="menu-outline" size={29} color="#fff" /></Pressable>
       </View>
       <View style={styles.searchBox}>
-        <Text style={styles.searchIcon}>⌕</Text>
+        <Ionicons name="search-outline" size={21} color={colors.muted} />
         <TextInput
           accessibilityLabel="البحث في المنتجات"
           value={search}
@@ -32,7 +33,7 @@ export function StoreHeader({ search, onSearch, onHome, onCategories, onCart, ca
           autoCorrect={false}
         />
       </View>
-      <Text style={styles.tagline}>كل ما تحتاجه لمنزلك وسيارتك والعناية الشخصية</Text>
+      <Text style={styles.tagline}>{brand.tagline}</Text>
     </View>
   );
 }
@@ -52,7 +53,7 @@ export function BottomNavigation({ selected, onSelect, cartCount }) {
             accessibilityLabel={item.title}
           >
             <View>
-              <Text style={[styles.tabIcon, active && styles.activeText]}>{item.icon}</Text>
+              <Ionicons name={active ? item.activeIcon : item.icon} size={24} color={active ? colors.primary : colors.muted} />
               {item.key === 'cart' && cartCount > 0 && (
                 <View style={styles.tabBadge}><Text style={styles.tabBadgeText}>{cartCount}</Text></View>
               )}
@@ -120,7 +121,7 @@ export function ProductCard({ product, favorite, onFavorite, onOpen, onAdd, busy
         accessibilityLabel={favorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
         accessibilityState={{ selected: favorite }}
       >
-        <Text style={[styles.favoriteText, favorite && styles.activeText]}>{favorite ? '♥' : '♡'}</Text>
+        <Ionicons name={favorite ? "heart" : "heart-outline"} size={22} color={favorite ? colors.primary : colors.text} />
       </Pressable>
       <Pressable onPress={() => onOpen(product)} accessibilityRole="button">
         <Text style={styles.productTitle} numberOfLines={2}>{product.title}</Text>
@@ -157,21 +158,21 @@ export function MessageState({ title, description, onRetry, retryLabel = 'إعا
 
 const styles = StyleSheet.create({
   header: { backgroundColor: colors.primary, paddingHorizontal: 14, paddingBottom: 10 },
-  headerBar: { height: 49, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerSymbol: { color: '#fff', fontSize: 24, width: 35, textAlign: 'center' },
-  brand: { fontSize: 23, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
-  brandLight: { fontWeight: '300' },
-  cartIcon: { position: 'relative' },
-  cartBadge: { position: 'absolute', top: -2, left: -4, borderRadius: 12, minWidth: 16, backgroundColor: colors.text, paddingHorizontal: 3 },
+  headerBar: { height: 57, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  logoContainer: { borderRadius: 10, width: 142, height: 44, backgroundColor: '#fff', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  brandLogo: { width: 139, height: 42 },
+  menuButton: { minWidth: 38, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  cartIcon: { position: 'relative', minWidth: 38, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  cartBadge: { position: 'absolute', top: 0, left: 0, borderRadius: 11, minWidth: 18, backgroundColor: colors.text, paddingHorizontal: 4 },
   cartBadgeText: { fontSize: 10, color: '#fff', textAlign: 'center' },
-  searchBox: { height: 44, borderRadius: 24, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 },
+  searchBox: { height: 46, borderRadius: 24, backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8 },
   searchIcon: { color: colors.muted, fontSize: 22, marginRight: 7 },
   searchInput: { flex: 1, color: colors.text, fontSize: 13, paddingVertical: 0, writingDirection: 'rtl' },
   tagline: { color: '#fff', fontSize: 10, marginTop: 7, textAlign: 'right' },
-  bottomBar: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.line, height: 66, flexDirection: 'row-reverse', justifyContent: 'space-around', alignItems: 'center' },
-  tab: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 2, minHeight: 52 },
+  bottomBar: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.line, height: 72, flexDirection: 'row-reverse', justifyContent: 'space-around', alignItems: 'center' },
+  tab: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 3, minHeight: 56 },
   tabIcon: { fontSize: 23, color: '#667085', textAlign: 'center', lineHeight: 27 },
-  tabText: { fontSize: 10, color: '#667085', textAlign: 'center' },
+  tabText: { fontSize: 11, color: colors.muted, textAlign: 'center' },
   activeText: { color: colors.primary, fontWeight: '800' },
   tabBadge: { position: 'absolute', top: -3, right: -9, borderRadius: 10, backgroundColor: colors.primary, minWidth: 15, paddingHorizontal: 2 },
   tabBadgeText: { color: '#fff', textAlign: 'center', fontSize: 10 },
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
   actionPill: { borderWidth: 1, borderColor: colors.line, borderRadius: 20, backgroundColor: '#fff', paddingVertical: 7, paddingHorizontal: 10, marginRight: 10 },
   actionText: { fontSize: 11, color: colors.primary, fontWeight: '600' },
   productCard: { backgroundColor: '#fff', borderRadius: 14, width: '48.4%', padding: 8, marginBottom: 12, borderWidth: 1, borderColor: colors.line, overflow: 'hidden' },
-  productImageBox: { height: 145, backgroundColor: '#F4F5F7', borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  productImageBox: { height: 145, backgroundColor: '#fff', borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   productImage: { height: '100%', width: '100%' },
   noImage: { fontSize: 10, color: colors.muted },
   discount: { position: 'absolute', top: 6, right: 6, backgroundColor: colors.primary, borderRadius: 6, paddingVertical: 3, paddingHorizontal: 5 },
