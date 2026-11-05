@@ -1,0 +1,27 @@
+name: Native theme port verification
+
+on:
+  push:
+    branches:
+      - feat/port-indexes-shopify-theme-to-react-native
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  code-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: API and catalog regression tests
+        run: node --test tests/*.test.mjs
+      - name: Install standalone JSX parser without native dependencies
+        run: npm install --prefix /tmp/indexes-parser --no-save --no-package-lock --ignore-scripts --no-audit --no-fund '@babel/parser@^7.26.0'
+      - name: Validate JavaScript, JSX and relative imports
+        run: NODE_PATH=/tmp/indexes-parser/node_modules node scripts/check-syntax.cjs
