@@ -1,6 +1,6 @@
 {
   "name": "indexes-store-native",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "start": "expo start --dev-client",
@@ -13,7 +13,6 @@
     "build:android:evaluation": "cd android && ./gradlew :app:assembleRelease"
   },
   "dependencies": {
-    "@shopify/checkout-sheet-kit": "^3.0.0",
     "react": "18.2.0",
     "react-native": "0.73.6",
     "@react-native-async-storage/async-storage": "^1.23.1",
