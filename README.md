@@ -1,50 +1,47 @@
-# Mobile Storefront — React Native
+# Indexes Store — Native Android
 
-Companion code for [shopify.dev](https://shopify.dev) tutorials covering the Storefront API, [Checkout Kit for React Native](https://github.com/Shopify/checkout-sheet-kit-react-native), and Customer Account API authentication.
+Expo SDK 50 / React Native 0.73 storefront for `indexesstore.com`.
+Design reference: **unpublished Shopify Admin theme 162512797781** (Indexes — Homepage Video Banners — Draft), not the older upstream snippets.
 
-> **This repository is not a standalone runnable app.** It contains the source files referenced inline by the tutorials. To use them, drop the files into an existing React Native project and add the dependencies listed below.
+## Implemented
 
-## Tutorials
+- Native three-video homepage carousel (6-second autoplay, pause, arrows, accessible slide dots and posters).
+- Shopify's two **enabled** promo tiles: one image, one muted video. Disabled Gifts promo is excluded.
+- Shopify artwork and icon, Arabic RTL search/header, eleven collections in the draft's order, auto-scrolling 4.5-second category strip.
+- Product listing (24/page), search, wishlist, product detail and persistent cart via Shopify Storefront API.
+- External browser checkout for validated Shopify cart URL; never assumes checkout completed.
 
-- [Build a mobile storefront](https://shopify.dev/docs/storefronts/mobile/build-mobile-storefront)
-- [Embed Checkout Kit](https://shopify.dev/docs/storefronts/mobile/checkout-kit)
-- [Authenticate checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/authenticate-checkouts)
-- [Accelerated checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/accelerated-checkouts)
+## Build and verify
 
-## What's included
+```sh
+npm install
+npm run verify
+npx expo prebuild --platform android --no-install
+cd android && ./gradlew :app:assembleRelease
+```
 
-| File | Description |
-|---|---|
-| `storefrontClient.js` | Storefront API client — product queries, cart creation, cart permalinks |
-| `ProductListScreen.jsx` | Product list with Add to Cart |
-| `CartScreen.jsx` | Checkout Kit integration with event handling |
-| `App.jsx` | App entry point with `ShopifyCheckoutSheetProvider` |
-| `authClient.js` | OAuth + PKCE flow against the Customer Account API |
-| `AcceleratedCheckout*.jsx` | Accelerated checkout buttons, configuration, customization, events, and render-state handling |
+GitHub Actions `.github/workflows/android-debug-apk.yml` builds an Android 0.2.2 APK with bundled JS, validates its package, SHA-256 and signature, and includes an emulator smoke-test job that checks launch, live product-card rendering, categories and cart while capturing screenshots. Check each job's status; native compilation alone does not demonstrate correct execution.
 
-## Use these snippets in your project
+Android app ID: `com.indexesstore.mobile`, version `0.2.2`, versionCode `3`. **Evaluation only**: signed with an ephemeral debug certificate, not a production identity. Earlier preview APKs may require uninstalling before installing this one.
 
-1. Copy the relevant files into your React Native project's source tree.
-2. Install the npm dependencies imported by these files:
+## Required integration
 
-   ```sh
-   npm install @shopify/checkout-sheet-kit expo-crypto
-   ```
+`storefrontClient.js` has a merchant-provided **public** Storefront API token. The read-only live integration workflow confirms Shopify accepts it and serves products and collections. Do not replace it with an Admin/private token. The product-card test now checks that the actual Android UI renders these products; real cart mutations and checkout still require separate validation.
 
-3. In `storefrontClient.js`, replace `{shop}.myshopify.com` with your store domain and add your Storefront API access token.
-4. Wrap your app's root in `ShopifyCheckoutSheetProvider` (see `App.jsx`).
+Four public Shopify CDN videos are streamed rather than packaged in the APK. Actual video performance, live cart/payment flows, production signing, iOS and real-device behavior are not yet proven. Shopify checkout currently opens in the browser because the native Checkout Sheet Kit failed at app launch in 0.1.0. The legacy `AcceleratedCheckout*.jsx` tutorial examples are not runtime screens.
 
-## Requirements
+See [THEME_PORT.md](THEME_PORT.md) for source traceability, verification and blockers.
 
-- React Native 0.70 or later
-- iOS 13 or later / Android SDK 23 or later
-- A [Shopify development store](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started) with at least one product
-- A Storefront API access token with `unauthenticated_read_product_listings` and `unauthenticated_write_checkouts` scopes
+License: [LICENSE.md](LICENSE.md).
 
-## Contributing
+## Installing evaluation APK 0.2.2
 
-This repository doesn't accept issues or external contributions. It exists as a companion to the tutorials linked above. If you find an issue with the tutorial content, use the feedback form on the tutorial page.
+An older `0.2.0` APK was built without Shopify Storefront credentials. It will not update its embedded JavaScript when the GitHub repository changes. Install APK `0.2.2` (build 4). Because CI generates a different ephemeral debug signing certificate, you may need to uninstall older evaluation builds first. **Uninstalling deletes locally saved wishlist/cart IDs**; export or preserve any important device data before uninstalling. This is not a production signing/update strategy.
 
-## License
+## Finding products in the mobile UI
 
-This project is licensed under the [MIT License](LICENSE.md).
+On the native homepage, scroll **below the video banners and category carousel** to see the live `منتجات مختارة لك` grid. Version `0.2.2` embeds the connected public Storefront token and the emulator test confirms visible product cards with real images/prices. Older `0.2.0` test builds did not contain that configuration.
+
+## Cross-tab navigation regression
+
+On Android, the native homepage and Categories share a `FlatList`. When a shopper swipes down to real products and taps Categories, the list must return to offset 0 instead of retaining the homepage scroll position. The native list now resets its viewport when mode, category or search changes. The emulator E2E gate verifies that the categories-only subtitle becomes visible.
