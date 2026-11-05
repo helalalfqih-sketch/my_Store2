@@ -6,10 +6,11 @@ import { fetchCollectionProductsPage, fetchCollections, fetchProductsPage } from
 import { categories, colors, promoSlides, promoTiles } from './src/theme/indexesTheme';
 import { CategoryRail, MessageState, ProductCard, SectionHeading } from './src/components/StorefrontUI';
 import { HomepageVideoCarousel, HomepagePromoTiles } from './src/components/HomepageVideoBanners';
+import { HomepageFeaturedCategoryLinks, HomepageServices } from './src/components/HomepageDraftSections';
 
 export default function ProductListScreen({
   mode = 'home', search = '', selectedCategory = null, favorites = [],
-  onCategory, onFavorite, onOpenProduct, onAddToCart, cartBusy = false,
+  onCategory, onFavorite, onOpenProduct, onAddToCart, onOpenCart, cartBusy = false,
 }) {
   const [products, setProducts] = useState([]);
   const [homeMediaVisible, setHomeMediaVisible] = useState(true);
@@ -132,6 +133,7 @@ export default function ProductListScreen({
         action={selectedCategory ? 'كل المنتجات' : null}
         onAction={() => onCategory(null)}
       />
+      {home && <HomepageFeaturedCategoryLinks onCategory={onCategory} />}
       {loading && mode !== 'wishlist' && <ActivityIndicator size="large" color={colors.primary} style={styles.indicator} />}
       {error && <MessageState title="تعذر عرض المنتجات" description={error} onRetry={() => setRefreshVersion(value => value + 1)} />}
     </View>
@@ -153,7 +155,12 @@ export default function ProductListScreen({
         setHomeMediaVisible(previous => previous === visible ? previous : visible);
       }}
       onEndReachedThreshold={0.5}
-      ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.primary} style={styles.indicator} /> : loadMoreError ? <MessageState title="تعذر تحميل المزيد" description={loadMoreError} onRetry={loadMore} /> : null}
+      ListFooterComponent={(
+        <View>
+          {loadingMore ? <ActivityIndicator color={colors.primary} style={styles.indicator} /> : loadMoreError ? <MessageState title="تعذر تحميل المزيد" description={loadMoreError} onRetry={loadMore} /> : null}
+          {home && <HomepageServices onOpenCart={onOpenCart} />}
+        </View>
+      )}
       ListEmptyComponent={!loading && !error ? (
         <MessageState
           title={mode === 'wishlist' ? 'لم تضف منتجات للمفضلة بعد' : 'لا توجد منتجات لعرضها'}
