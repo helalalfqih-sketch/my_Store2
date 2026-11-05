@@ -1,5 +1,7 @@
 # Mobile Storefront — React Native
 
+> **Indexes Store native UI port:** The Shopify Liquid theme has been adapted into React Native screens on this branch. See [THEME_PORT.md](THEME_PORT.md) for implemented flows, verification, configuration and build blockers. This is still **not** a standalone runnable Android/iOS project.
+
 Companion code for [shopify.dev](https://shopify.dev) tutorials covering the Storefront API, [Checkout Kit for React Native](https://github.com/Shopify/checkout-sheet-kit-react-native), and Customer Account API authentication.
 
 > **This repository is not a standalone runnable app.** It contains the source files referenced inline by the tutorials. To use them, drop the files into an existing React Native project and add the dependencies listed below.
