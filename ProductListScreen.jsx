@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Image, Pressable, RefreshControl,
   ScrollView, StyleSheet, Text, View,
 } from 'react-native';
-import { fetchCollectionProducts, fetchProducts } from './storefrontClient';
+import { fetchCollectionProductsPage, fetchProductsPage } from './storefrontClient';
 import { categories, colors, promoSlides, promoTiles } from './src/theme/indexesTheme';
 import { CategoryRail, MessageState, ProductCard, SectionHeading } from './src/components/StorefrontUI';
 
@@ -16,12 +16,19 @@ export default function ProductListScreen({
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [pageInfo, setPageInfo] = useState({ hasNextPage: false, endCursor: null });
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false);
   const [debouncedSearch, setDebouncedSearch] = useState(search.trim());
 
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(search.trim()), 350);
     return () => clearTimeout(handle);
   }, [search]);
+
+  const requestKey = [mode, selectedCategory, debouncedSearch, refreshVersion].join('|');
+  const currentKey = useRef(requestKey);
+  currentKey.current = requestKey;
 
   useEffect(() => {
     if (mode === 'wishlist') {
@@ -31,17 +38,48 @@ export default function ProductListScreen({
       return undefined;
     }
     let alive = true;
+    loadingMoreRef.current = false;
     setLoading(true);
+    setLoadingMore(false);
+    setPageInfo({ hasNextPage: false, endCursor: null });
     setError('');
     const request = selectedCategory && !debouncedSearch
-      ? fetchCollectionProducts(selectedCategory)
-      : fetchProducts({ query: debouncedSearch || null });
+      ? fetchCollectionProductsPage(selectedCategory)
+      : fetchProductsPage({ query: debouncedSearch || null });
     request
-      .then(result => { if (alive) setProducts(result); })
+      .then(page => {
+        if (alive) {
+          setProducts(page.items);
+          setPageInfo(page.pageInfo);
+        }
+      })
       .catch(reason => { if (alive) { setError(reason.message || 'تعذر تحميل المنتجات.'); setProducts([]); } })
       .finally(() => { if (alive) { setLoading(false); setRefreshing(false); } });
     return () => { alive = false; };
   }, [mode, selectedCategory, debouncedSearch, refreshVersion]);
+
+  const loadMore = () => {
+    if (mode === 'wishlist' || loading || loadingMoreRef.current || !pageInfo.hasNextPage || !pageInfo.endCursor || error) return;
+    const key = requestKey;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const request = selectedCategory && !debouncedSearch
+      ? fetchCollectionProductsPage(selectedCategory, { after: pageInfo.endCursor })
+      : fetchProductsPage({ query: debouncedSearch || null, after: pageInfo.endCursor });
+    request.then(page => {
+      if (currentKey.current !== key) return;
+      setProducts(previous => {
+        const ids = new Set(previous.map(product => product.id));
+        return [...previous, ...page.items.filter(product => !ids.has(product.id))];
+      });
+      setPageInfo(page.pageInfo);
+    }).catch(reason => {
+      if (currentKey.current === key) setError(reason.message || 'تعذر تحميل المزيد.');
+    }).finally(() => {
+      loadingMoreRef.current = false;
+      if (currentKey.current === key) setLoadingMore(false);
+    });
+  };
 
   const items = mode === 'wishlist' ? favorites : products;
   const activeCategory = categories.find(item => item.handle === selectedCategory);
@@ -96,6 +134,9 @@ export default function ProductListScreen({
       numColumns={2}
       columnWrapperStyle={styles.columns}
       ListHeaderComponent={header}
+      onEndReached={loadMore}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.primary} style={styles.indicator} /> : null}
       ListEmptyComponent={!loading && !error ? (
         <MessageState
           title={mode === 'wishlist' ? 'لم تضف منتجات للمفضلة بعد' : 'لا توجد منتجات لعرضها'}
