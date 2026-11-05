@@ -1,47 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Alert, Image, Pressable, ScrollView, StyleSheet, Text, View,
+  Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
-import { useShopifyCheckoutSheet } from '@shopify/checkout-sheet-kit';
+import { SHOP_DOMAIN } from './storefrontClient';
+import { openCheckoutInBrowser } from './src/checkout/openCheckout';
 import { colors } from './src/theme/indexesTheme';
 import { cartQuantity, money } from './src/theme/catalogUtils';
 import { MessageState } from './src/components/StorefrontUI';
 
 export default function CartScreen({
   cart, loading, busy, restoreError, onRetryRestore, onUpdateQuantity,
-  onRemoveLine, onOrderComplete, onBrowse,
+  onRemoveLine, onBrowse,
 }) {
-  const checkout = useShopifyCheckoutSheet();
   const [presenting, setPresenting] = useState(false);
   const lines = cart?.lines?.nodes || [];
   const count = cartQuantity(cart);
 
-  useEffect(() => {
-    const completed = checkout.addEventListener('completed', event => {
-      setPresenting(false);
-      onOrderComplete(event);
-    });
-    const closed = checkout.addEventListener('close', () => setPresenting(false));
-    const failed = checkout.addEventListener('error', error => {
-      setPresenting(false);
-      Alert.alert('تعذر إتمام الدفع', error?.message || 'حاول مرة أخرى.');
-    });
-    return () => {
-      completed.remove();
-      closed.remove();
-      failed.remove();
-    };
-  }, [checkout, onOrderComplete]);
-
   const presentCheckout = async () => {
-    if (!cart?.checkoutUrl || !count || presenting) return;
+    if (!cart?.checkoutUrl || !count || presenting || busy) return;
+    setPresenting(true);
     try {
-      setPresenting(true);
-      await checkout.present(cart.checkoutUrl);
-      // The completed / close / error listeners own the terminal state.
+      await openCheckoutInBrowser(cart.checkoutUrl, SHOP_DOMAIN, url => Linking.openURL(url));
+      // External checkout does not emit verified completion events.
+      // Keep the cart and let Shopify restore it on the next app start.
     } catch (error) {
-      setPresenting(false);
       Alert.alert('تعذر فتح الدفع', error?.message || 'حاول مرة أخرى.');
+    } finally {
+      setPresenting(false);
     }
   };
 
@@ -92,7 +77,7 @@ export default function CartScreen({
           <Text style={styles.total}>{money(cart.cost?.totalAmount)}</Text>
           <Text style={styles.totalLabel}>المجموع الحالي</Text>
         </View>
-        <Text style={styles.disclaimer}>يتم تأكيد الشحن والضرائب ووسائل الدفع المتاحة داخل Shopify Checkout.</Text>
+        <Text style={styles.disclaimer}>سيُفتح الدفع الآمن عبر Shopify في المتصفح. عند العودة إلى التطبيق ستبقى السلة محفوظة؛ فتح المتصفح وحده لا يؤكد إتمام الطلب.</Text>
         <Pressable style={[styles.checkoutButton, (busy || presenting) && styles.disabled]} onPress={presentCheckout} disabled={busy || presenting} accessibilityRole="button" accessibilityLabel="المتابعة إلى الدفع">
           <Text style={styles.checkoutText}>{presenting ? 'جارٍ فتح الدفع...' : 'المتابعة إلى الدفع'}</Text>
         </Pressable>
