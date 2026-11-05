@@ -18,6 +18,7 @@ export default function ProductListScreen({
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [pageInfo, setPageInfo] = useState({ hasNextPage: false, endCursor: null });
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState('');
   const loadingMoreRef = useRef(false);
   const [debouncedSearch, setDebouncedSearch] = useState(search.trim());
 
@@ -41,6 +42,7 @@ export default function ProductListScreen({
     loadingMoreRef.current = false;
     setLoading(true);
     setLoadingMore(false);
+    setLoadMoreError('');
     setPageInfo({ hasNextPage: false, endCursor: null });
     setError('');
     const request = selectedCategory && !debouncedSearch
@@ -62,6 +64,7 @@ export default function ProductListScreen({
     if (mode === 'wishlist' || loading || loadingMoreRef.current || !pageInfo.hasNextPage || !pageInfo.endCursor || error) return;
     const key = requestKey;
     loadingMoreRef.current = true;
+    setLoadingMoreError('');
     setLoadingMore(true);
     const request = selectedCategory && !debouncedSearch
       ? fetchCollectionProductsPage(selectedCategory, { after: pageInfo.endCursor })
@@ -74,7 +77,7 @@ export default function ProductListScreen({
       });
       setPageInfo(page.pageInfo);
     }).catch(reason => {
-      if (currentKey.current === key) setError(reason.message || 'تعذر تحميل المزيد.');
+      if (currentKey.current === key) setLoadMoreError(reason.message || 'تعذر تحميل المزيد.');
     }).finally(() => {
       loadingMoreRef.current = false;
       if (currentKey.current === key) setLoadingMore(false);
@@ -136,7 +139,7 @@ export default function ProductListScreen({
       ListHeaderComponent={header}
       onEndReached={loadMore}
       onEndReachedThreshold={0.5}
-      ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.primary} style={styles.indicator} /> : null}
+      ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.primary} style={styles.indicator} /> : loadMoreError ? <MessageState title="تعذر تحميل المزيد" description={loadMoreError} onRetry={loadMore} /> : null}
       ListEmptyComponent={!loading && !error ? (
         <MessageState
           title={mode === 'wishlist' ? 'لم تضف منتجات للمفضلة بعد' : 'لا توجد منتجات لعرضها'}
