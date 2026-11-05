@@ -1,7 +1,7 @@
 // Shopify Storefront API client for the native Indexes Store UI.
 // A Storefront PUBLIC access token is intended for client apps; never put
 // Admin API credentials or customer account secrets in this file.
-const SHOP_DOMAIN = 'your-shop.myshopify.com';
+const SHOP_DOMAIN = 'indexesstore.com';
 const STOREFRONT_ACCESS_TOKEN = 'your-public-storefront-token';
 const API_VERSION = '2026-01';
 
@@ -30,16 +30,16 @@ const CART_FIELDS = [
 ].join('\n');
 
 const PRODUCTS_QUERY = [
-  'query IndexesProducts($first: Int!, $query: String) {',
-  'products(first: $first, query: $query) { nodes { ...IndexesProduct } }',
+  'query IndexesProducts($first: Int!, $query: String, $after: String) {',
+  'products(first: $first, query: $query, after: $after) { nodes { ...IndexesProduct } pageInfo { hasNextPage endCursor } }',
   '}',
   PRODUCT_FIELDS,
 ].join('\n');
 
 const COLLECTION_QUERY = [
-  'query IndexesCollection($handle: String!, $first: Int!) {',
+  'query IndexesCollection($handle: String!, $first: Int!, $after: String) {',
   'collection(handle: $handle) { id title handle',
-  'products(first: $first) { nodes { ...IndexesProduct } } }',
+  'products(first: $first, after: $after) { nodes { ...IndexesProduct } pageInfo { hasNextPage endCursor } } }',
   '}',
   PRODUCT_FIELDS,
 ].join('\n');
@@ -160,20 +160,28 @@ export function createStorefrontClient({
   }
 
   return {
-    async listProducts({ first = 24, query = null } = {}) {
+    async listProductsPage({ first = 24, query = null, after = null } = {}) {
       const n = Number.isSafeInteger(first) ? Math.max(1, Math.min(50, first)) : 24;
-      const data = await request(PRODUCTS_QUERY, { first: n, query: query?.trim() || null });
-      return data.products?.nodes || [];
+      const data = await request(PRODUCTS_QUERY, { first: n, query: query?.trim() || null, after });
+      return { items: data.products?.nodes || [], pageInfo: data.products?.pageInfo || { hasNextPage: false, endCursor: null } };
+    },
+    async listProducts(options) {
+      const page = await this.listProductsPage(options);
+      return page.items;
     },
     async listCollections() {
       const data = await request(COLLECTIONS_QUERY);
       return data.collections?.nodes || [];
     },
-    async listCollectionProducts(handle, first = 24) {
+    async listCollectionProductsPage(handle, { first = 24, after = null } = {}) {
       if (!handle || typeof handle !== 'string') throw new Error('معرّف القسم غير صالح.');
       const n = Number.isSafeInteger(first) ? Math.max(1, Math.min(50, first)) : 24;
-      const data = await request(COLLECTION_QUERY, { handle, first: n });
-      return data.collection?.products?.nodes || [];
+      const data = await request(COLLECTION_QUERY, { handle, first: n, after });
+      return { items: data.collection?.products?.nodes || [], pageInfo: data.collection?.products?.pageInfo || { hasNextPage: false, endCursor: null } };
+    },
+    async listCollectionProducts(handle, first = 24) {
+      const page = await this.listCollectionProductsPage(handle, { first });
+      return page.items;
     },
     async createCart(variantId, quantity = 1) {
       if (!variantId) throw new Error('اختر منتجًا صالحًا.');
@@ -205,8 +213,10 @@ export function createStorefrontClient({
 
 const client = createStorefrontClient({ domain: SHOP_DOMAIN, token: STOREFRONT_ACCESS_TOKEN });
 export const fetchProducts = options => client.listProducts(options);
+export const fetchProductsPage = options => client.listProductsPage(options);
 export const fetchCollections = () => client.listCollections();
 export const fetchCollectionProducts = (handle, first) => client.listCollectionProducts(handle, first);
+export const fetchCollectionProductsPage = (handle, options) => client.listCollectionProductsPage(handle, options);
 export const createCart = (variantId, quantity) => client.createCart(variantId, quantity);
 export const addCartLines = (cartId, variantId, quantity) => client.addCartLines(cartId, variantId, quantity);
 export const updateCartLine = (cartId, lineId, quantity) => client.updateCartLine(cartId, lineId, quantity);
