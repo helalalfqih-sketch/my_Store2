@@ -65,8 +65,8 @@ export function BottomNavigation({ selected, onSelect, cartCount }) {
   );
 }
 
-export function CategoryRail({ selectedHandle, onPress, grid = false }) {
-  const cards = categories.map(item => {
+export function CategoryRail({ selectedHandle, onPress, grid = false, items = categories }) {
+  const cards = items.map(item => {
     const active = item.handle === selectedHandle;
     return (
       <Pressable
