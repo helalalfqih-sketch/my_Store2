@@ -3,7 +3,7 @@ import {
   ActivityIndicator, FlatList, Image, Pressable, RefreshControl,
   ScrollView, StyleSheet, Text, View,
 } from 'react-native';
-import { fetchCollectionProductsPage, fetchProductsPage } from './storefrontClient';
+import { fetchCollectionProductsPage, fetchCollections, fetchProductsPage } from './storefrontClient';
 import { categories, colors, promoSlides, promoTiles } from './src/theme/indexesTheme';
 import { CategoryRail, MessageState, ProductCard, SectionHeading } from './src/components/StorefrontUI';
 
@@ -12,6 +12,7 @@ export default function ProductListScreen({
   onCategory, onFavorite, onOpenProduct, onAddToCart, cartBusy = false,
 }) {
   const [products, setProducts] = useState([]);
+  const [publishedCollections, setPublishedCollections] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -84,6 +85,17 @@ export default function ProductListScreen({
     });
   };
 
+  useEffect(() => {
+    let alive = true;
+    fetchCollections().then(items => {
+      if (alive) setPublishedCollections(items);
+    }).catch(() => {
+      if (alive) setPublishedCollections(null);
+    });
+    return () => { alive = false; };
+  }, [refreshVersion]);
+
+  const shownCategories = publishedCollections === null ? categories : categories.filter(item => publishedCollections.some(collection => collection.handle === item.handle));
   const items = mode === 'wishlist' ? favorites : products;
   const activeCategory = categories.find(item => item.handle === selectedCategory);
   const home = mode === 'home' && !selectedCategory && !debouncedSearch;
@@ -108,13 +120,13 @@ export default function ProductListScreen({
             ))}
           </View>
           <SectionHeading title="الأقسام الرئيسية" action="عرض الكل" onAction={() => onCategory(null, 'categories')} />
-          <CategoryRail onPress={onCategory} selectedHandle={selectedCategory} />
+          <CategoryRail onPress={onCategory} selectedHandle={selectedCategory} items={shownCategories} />
         </>
       )}
       {categoriesPage && (
         <>
           <SectionHeading title="الأقسام الرئيسية" subtitle="تسوق حسب القسم المناسب لك" />
-          <CategoryRail grid selectedHandle={selectedCategory} onPress={onCategory} />
+          <CategoryRail grid selectedHandle={selectedCategory} onPress={onCategory} items={shownCategories} />
         </>
       )}
       <SectionHeading
