@@ -11,7 +11,7 @@ test('Shopify draft hero contains exactly 3 public playable videos in source ord
   }
 });
 
-test('draft's disabled gifts tile is omitted and video promo is configured', () => {
+test("draft disabled gifts tile is omitted and video promo is configured", () => {
   assert.deepEqual(promoTiles.map(v => v.kind), ['image','video']);
   assert.equal(promoTiles.every(v => v.handle === 'الإلكترونيات-والهواتف'), true);
   assert.equal(isTrustedShopifyMedia(promoTiles[1].video), true);
