@@ -49,3 +49,9 @@ The imported theme category handles may not all match current published store co
 5. Review native accessibility, safe areas, currency handling, performance with large catalogs and screenshot fidelity.
 
 No APK, app-store submission, live deployment or verified payment checkout is provided by this change. The main branch remains unchanged until review.
+
+## Android launch crash correction (evaluation 0.1.1)
+
+Android emulator reproduced a fatal launch exception on 0.1.0: ShopifyCheckoutSheetKit native module was not linked. The app entrypoint had imported Checkout Sheet Kit eagerly, so the application crashed before the main screen could render. Version 0.1.1 removes Checkout Kit from the runtime dependency graph, and the native cart screen opens the cart.checkoutUrl in the system browser using a validated HTTPS Shopify checkout URL. Launching the browser **does not prove the order completed**; the cart is deliberately retained until Shopify reports its state through the Storefront API. Native Checkout Kit integration can be reintroduced only after the Android module is linked and the device tests prove it works.
+
+This build uses a new ephemeral Android debug signing key. An installed 0.1.0 evaluation build may have a different signature and block an in-place update; uninstall the previous test APK first and reinstall 0.1.1. Never treat this signing key as a production update identity. Products still require a configured **public** Storefront API token.
