@@ -1,116 +1,221 @@
-// [START integrate.config]
-const STOREFRONT_ACCESS_TOKEN = 'your-storefront-access-token';
-const SHOP_DOMAIN = '{shop}.myshopify.com';
+// Shopify Storefront API client for the native Indexes Store UI.
+// A Storefront PUBLIC access token is intended for client apps; never put
+// Admin API credentials or customer account secrets in this file.
+const SHOP_DOMAIN = 'your-shop.myshopify.com';
+const STOREFRONT_ACCESS_TOKEN = 'your-public-storefront-token';
 const API_VERSION = '2026-01';
-// [END integrate.config]
 
-// [START complete-tutorial.fetch-products]
-async function fetchProducts() {
-  const query = `
-    query Products {
-      products(first: 10) {
-        edges {
-          node {
-            id
-            title
-            description
-            featuredImage { url }
-            variants(first: 1) {
-              edges {
-                node {
-                  id
-                  title
-                  price { amount currencyCode }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  `;
+const PRODUCT_FIELDS = [
+  'fragment IndexesProduct on Product {',
+  'id handle title description availableForSale',
+  'featuredImage { url altText }',
+  'images(first: 6) { nodes { url altText } }',
+  'variants(first: 30) { nodes { id title availableForSale',
+  'price { amount currencyCode } compareAtPrice { amount currencyCode } } }',
+  '}',
+].join('\n');
 
-  const response = await fetch(
-    `https://${SHOP_DOMAIN}/api/${API_VERSION}/graphql.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN,
-      },
-      body: JSON.stringify({ query }),
-    }
-  );
+const CART_FIELDS = [
+  'fragment IndexesCart on Cart {',
+  'id checkoutUrl totalQuantity',
+  'cost { subtotalAmount { amount currencyCode } totalAmount { amount currencyCode } }',
+  'lines(first: 100) { nodes { id quantity',
+  'cost { totalAmount { amount currencyCode } }',
+  'merchandise { ... on ProductVariant { id title',
+  'price { amount currencyCode }',
+  'image { url altText }',
+  'product { id title handle featuredImage { url altText } }',
+  '} } } }',
+  '}',
+].join('\n');
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+const PRODUCTS_QUERY = [
+  'query IndexesProducts($first: Int!, $query: String) {',
+  'products(first: $first, query: $query) { nodes { ...IndexesProduct } }',
+  '}',
+  PRODUCT_FIELDS,
+].join('\n');
+
+const COLLECTION_QUERY = [
+  'query IndexesCollection($handle: String!, $first: Int!) {',
+  'collection(handle: $handle) { id title handle',
+  'products(first: $first) { nodes { ...IndexesProduct } } }',
+  '}',
+  PRODUCT_FIELDS,
+].join('\n');
+
+const CART_CREATE = [
+  'mutation IndexesCartCreate($lines: [CartLineInput!]!) {',
+  'cartCreate(input: { lines: $lines }) { cart { ...IndexesCart }',
+  'userErrors { field message } } }',
+  CART_FIELDS,
+].join('\n');
+
+const CART_ADD = [
+  'mutation IndexesCartAdd($cartId: ID!, $lines: [CartLineInput!]!) {',
+  'cartLinesAdd(cartId: $cartId, lines: $lines) {',
+  'cart { ...IndexesCart } userErrors { field message } } }',
+  CART_FIELDS,
+].join('\n');
+
+const CART_UPDATE = [
+  'mutation IndexesCartUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) {',
+  'cartLinesUpdate(cartId: $cartId, lines: $lines) {',
+  'cart { ...IndexesCart } userErrors { field message } } }',
+  CART_FIELDS,
+].join('\n');
+
+const CART_REMOVE = [
+  'mutation IndexesCartRemove($cartId: ID!, $lineIds: [ID!]!) {',
+  'cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {',
+  'cart { ...IndexesCart } userErrors { field message } } }',
+  CART_FIELDS,
+].join('\n');
+
+const CART_GET = [
+  'query IndexesCart($id: ID!) { cart(id: $id) { ...IndexesCart } }',
+  CART_FIELDS,
+].join('\n');
+
+const COLLECTIONS_QUERY = [
+  'query IndexesCollections {',
+  'collections(first: 100) { nodes { id handle title image { url altText } } }',
+  '}',
+].join('\n');
+
+function validateDomain(domain) {
+  if (typeof domain !== 'string' ||
+      domain === 'your-shop.myshopify.com' ||
+      !/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(domain) ||
+      domain.split('.').some(part => part.startsWith('-') || part.endsWith('-'))) {
+    throw new Error('اضبط SHOP_DOMAIN باسم نطاق متجرك Shopify قبل التشغيل.');
   }
-
-  const { data, errors } = await response.json();
-
-  if (errors) {
-    throw new Error(errors[0].message);
-  }
-
-  return data.products.edges.map(edge => edge.node);
+  return domain.toLowerCase();
 }
-// [END complete-tutorial.fetch-products]
 
-// [START complete-tutorial.create-cart]
-async function createCart(variantId, quantity = 1) {
-  const mutation = `
-    mutation CartCreate($input: CartInput!) {
-      cartCreate(input: $input) {
-        cart {
-          id
-          checkoutUrl
-        }
-        userErrors {
-          field
-          message
-        }
-      }
+function validQuantity(value) {
+  if (!Number.isSafeInteger(value) || value < 1 || value > 100) {
+    throw new Error('كمية المنتج يجب أن تكون عددًا صحيحًا من 1 إلى 100.');
+  }
+  return value;
+}
+
+function expectCart(data, key) {
+  const payload = data?.[key];
+  if (!payload) throw new Error('لم يُرجع Shopify نتيجة السلة المتوقعة.');
+  if (payload.userErrors?.length) {
+    throw new Error(payload.userErrors.map(item => item.message).join('، '));
+  }
+  if (!payload.cart?.id || !payload.cart.checkoutUrl) {
+    throw new Error('لم يُرجع Shopify سلة صالحة أو رابط إتمام الطلب.');
+  }
+  return payload.cart;
+}
+
+export function createStorefrontClient({
+  domain,
+  token,
+  version = API_VERSION,
+  fetchImpl = (...args) => globalThis.fetch(...args),
+  timeoutMs = 20000,
+}) {
+  async function request(query, variables = {}) {
+    const host = validateDomain(domain);
+    if (!token || token === 'your-public-storefront-token') {
+      throw new Error('اضبط STOREFRONT_ACCESS_TOKEN برمز Storefront API العام.');
     }
-  `;
+    if (!/^\d{4}-\d{2}$/.test(version)) throw new Error('إصدار Storefront API غير صالح.');
 
-  const response = await fetch(
-    `https://${SHOP_DOMAIN}/api/${API_VERSION}/graphql.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN,
-      },
-      body: JSON.stringify({
-        query: mutation,
-        variables: {
-          input: {
-            lines: [{ merchandiseId: variantId, quantity }],
-          },
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    let response;
+    try {
+      response = await fetchImpl('https://' + host + '/api/' + version + '/graphql.json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Storefront-Access-Token': token,
         },
-      }),
+        body: JSON.stringify({ query, variables }),
+        ...(controller ? { signal: controller.signal } : {}),
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') throw new Error('انتهت مهلة الاتصال بـ Shopify. حاول مرة أخرى.');
+      throw new Error('تعذر الاتصال بالمتجر. تحقق من الإنترنت وحاول مجددًا.');
+    } finally {
+      if (timeout) clearTimeout(timeout);
     }
-  );
-
-  const { data, errors } = await response.json();
-
-  if (errors) {
-    throw new Error(errors[0].message);
+    if (!response?.ok) throw new Error('رفض Shopify الطلب (HTTP ' + response?.status + ').');
+    let result;
+    try {
+      result = await response.json();
+    } catch (_) {
+      throw new Error('استجابة Shopify غير صالحة.');
+    }
+    if (result?.errors?.length) {
+      throw new Error(result.errors.map(error => error.message).join('، '));
+    }
+    if (!result?.data) throw new Error('لم يرجع Shopify بيانات.');
+    return result.data;
   }
 
-  if (data.cartCreate.userErrors.length > 0) {
-    throw new Error(data.cartCreate.userErrors[0].message);
-  }
-
-  return data.cartCreate.cart;
+  return {
+    async listProducts({ first = 24, query = null } = {}) {
+      const n = Number.isSafeInteger(first) ? Math.max(1, Math.min(50, first)) : 24;
+      const data = await request(PRODUCTS_QUERY, { first: n, query: query?.trim() || null });
+      return data.products?.nodes || [];
+    },
+    async listCollections() {
+      const data = await request(COLLECTIONS_QUERY);
+      return data.collections?.nodes || [];
+    },
+    async listCollectionProducts(handle, first = 24) {
+      if (!handle || typeof handle !== 'string') throw new Error('معرّف القسم غير صالح.');
+      const n = Number.isSafeInteger(first) ? Math.max(1, Math.min(50, first)) : 24;
+      const data = await request(COLLECTION_QUERY, { handle, first: n });
+      return data.collection?.products?.nodes || [];
+    },
+    async createCart(variantId, quantity = 1) {
+      if (!variantId) throw new Error('اختر منتجًا صالحًا.');
+      const data = await request(CART_CREATE, { lines: [{ merchandiseId: variantId, quantity: validQuantity(quantity) }] });
+      return expectCart(data, 'cartCreate');
+    },
+    async addCartLines(cartId, variantId, quantity = 1) {
+      if (!cartId || !variantId) throw new Error('بيانات السلة أو المنتج غير مكتملة.');
+      const data = await request(CART_ADD, { cartId, lines: [{ merchandiseId: variantId, quantity: validQuantity(quantity) }] });
+      return expectCart(data, 'cartLinesAdd');
+    },
+    async updateCartLine(cartId, lineId, quantity) {
+      if (!cartId || !lineId) throw new Error('بيانات السلة غير مكتملة.');
+      const data = await request(CART_UPDATE, { cartId, lines: [{ id: lineId, quantity: validQuantity(quantity) }] });
+      return expectCart(data, 'cartLinesUpdate');
+    },
+    async removeCartLine(cartId, lineId) {
+      if (!cartId || !lineId) throw new Error('بيانات السلة غير مكتملة.');
+      const data = await request(CART_REMOVE, { cartId, lineIds: [lineId] });
+      return expectCart(data, 'cartLinesRemove');
+    },
+    async getCart(cartId) {
+      if (!cartId) return null;
+      const data = await request(CART_GET, { id: cartId });
+      return data.cart || null;
+    },
+  };
 }
-// [END complete-tutorial.create-cart]
 
-// [START integrate.cart-permalink]
-function buildCartPermalink(variantId, quantity = 1) {
-  const numericVariantId = variantId.split('/').pop();
-  return `https://${SHOP_DOMAIN}/cart/${numericVariantId}:${quantity}`;
+const client = createStorefrontClient({ domain: SHOP_DOMAIN, token: STOREFRONT_ACCESS_TOKEN });
+export const fetchProducts = options => client.listProducts(options);
+export const fetchCollections = () => client.listCollections();
+export const fetchCollectionProducts = (handle, first) => client.listCollectionProducts(handle, first);
+export const createCart = (variantId, quantity) => client.createCart(variantId, quantity);
+export const addCartLines = (cartId, variantId, quantity) => client.addCartLines(cartId, variantId, quantity);
+export const updateCartLine = (cartId, lineId, quantity) => client.updateCartLine(cartId, lineId, quantity);
+export const removeCartLine = (cartId, lineId) => client.removeCartLine(cartId, lineId);
+export const fetchCart = cartId => client.getCart(cartId);
+export function buildCartPermalink(variantId, quantity = 1) {
+  const host = validateDomain(SHOP_DOMAIN);
+  const numeric = String(variantId || '').split('/').pop();
+  if (!/^\d+$/.test(numeric)) throw new Error('معرّف خيار المنتج غير صالح.');
+  return 'https://' + host + '/cart/' + numeric + ':' + validQuantity(quantity);
 }
-// [END integrate.cart-permalink]
-
-export { fetchProducts, createCart, buildCartPermalink, SHOP_DOMAIN };
+export { SHOP_DOMAIN, API_VERSION };
