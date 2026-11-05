@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/port-indexes-shopify-theme-to-react-native
+      - feat/indexes-home-video-draft-162512797781
   workflow_dispatch:
 
 permissions:
@@ -67,7 +68,7 @@ jobs:
           "$AAPT" dump badging "$APK" > verification/apk-badging.txt
           "$APKSIGNER" verify --verbose --print-certs "$APK" > verification/apk-signature.txt
           grep "package: name='com.indexesstore.mobile'" verification/apk-badging.txt
-          grep "versionName='0.1.1'" verification/apk-badging.txt
+          grep "versionName='0.1.2'" verification/apk-badging.txt
           unzip -l "$APK" > verification/apk-contents.txt
           grep -q 'assets/index.android.bundle' verification/apk-contents.txt
           echo "APK verified against expected Android application ID and JS bundle"

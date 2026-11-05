@@ -232,6 +232,7 @@ function App() {
               onFavorite={toggleFavorite}
               onOpenProduct={setSelectedProduct}
               onAddToCart={addProduct}
+              onOpenCart={() => selectTab('cart')}
               cartBusy={cartBusy || cartLoading || Boolean(cartError)}
             />
           )}

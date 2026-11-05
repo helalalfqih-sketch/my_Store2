@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/port-indexes-shopify-theme-to-react-native
+      - feat/indexes-home-video-draft-162512797781
   pull_request:
 
 permissions:

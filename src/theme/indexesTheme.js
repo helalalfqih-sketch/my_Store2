@@ -17,39 +17,64 @@ export const colors = Object.freeze({
 
 const assets = 'https://cdn.shopify.com/s/files/1/0664/0110/8053/files/';
 
+// Actual unpublished Shopify theme settings from
+// gid://shopify/OnlineStoreTheme/162512797781, templates/index.json,
+// inspected 2026-11-05. The draft is not published to the online store.
+// URLs were resolved from READY Shopify Video and MediaImage Admin records.
+export const homepageDraft = Object.freeze({
+  themeId: '162512797781',
+  name: 'Indexes — Homepage Video Banners — Draft 2026-1...',
+  sourceUpdatedAt: '2026-11-05T15:49:11Z',
+  carouselAutoplay: true,
+  carouselIntervalMs: 6000,
+  categoryIntervalMs: 4500,
+  enabledPromoCount: 2,
+});
+
 export const promoSlides = Object.freeze([
   {
-    key: 'all',
+    key: 'general',
     title: 'تصفح جميع الأقسام',
     handle: null,
-    image: assets + 'indexes-home-promo-general-1000491815.png?v=1792368194&width=960',
+    route: 'categories',
+    video: 'https://cdn.shopify.com/videos/c/vp/e4e37bdf87784c7199e384b22795c478/e4e37bdf87784c7199e384b22795c478.SD-480p-1.5Mbps-100132491.mp4',
+    poster: assets + 'indexes-home-video-poster-general-20261105.jpg?v=1793882176',
   },
   {
     key: 'home',
-    title: 'المنزل والمطبخ',
+    title: 'تصفح قسم المنزل والمطبخ',
     handle: 'المنزل-والمطبخ',
-    image: assets + 'indexes-home-promo-home-1000491824.png?v=1792368222&width=960',
+    route: 'collection',
+    video: 'https://cdn.shopify.com/videos/c/vp/2a6bc000ff934697b32cbd3eddba3397/2a6bc000ff934697b32cbd3eddba3397.SD-480p-1.2Mbps-100132492.mp4',
+    poster: assets + 'indexes-home-video-poster-feature-20261105.jpg?v=1793882255',
   },
   {
-    key: 'cars',
-    title: 'مستلزمات السيارات',
+    key: 'car',
+    title: 'تصفح قسم السيارات وملحقاتها',
     handle: 'السيارات-وملحقاتها',
-    image: assets + 'indexes-home-promo-car-1000491825.png?v=1792368232&width=960',
+    route: 'collection',
+    video: 'https://cdn.shopify.com/videos/c/vp/edf1834fffe7460ebd3df38b8cef8482/edf1834fffe7460ebd3df38b8cef8482.SD-480p-1.5Mbps-100141600.mp4',
+    poster: assets + 'indexes-home-video-poster-general-20261105.jpg?v=1793882176',
   },
 ]);
 
+// The merchant disabled the original gifts image block in templates/index.json.
+// Preserve only the two enabled promos in the draft and in their actual order.
 export const promoTiles = Object.freeze([
   {
-    key: 'gifts',
-    title: 'الهدايا والهوايات',
-    handle: 'الهدايا-والهوايات',
-    image: assets + 'indexes-home-promo-gifts-1000491813.png?v=1792368238&width=720',
+    key: 'electronics-image',
+    title: 'تصفح قسم الإلكترونيات والهواتف',
+    handle: 'الإلكترونيات-والهواتف',
+    route: 'categories',
+    image: assets + '1000502272.png?v=1793656063',
   },
   {
-    key: 'electronics',
-    title: 'الإلكترونيات والهواتف',
+    key: 'electronics-video',
+    title: 'تصفح قسم الإلكترونيات والهواتف',
     handle: 'الإلكترونيات-والهواتف',
-    image: assets + 'indexes-home-promo-electronics-1000491814.png?v=1792368247&width=720',
+    route: 'categories',
+    video: 'https://cdn.shopify.com/videos/c/vp/b36a9362e6b2460590ec4293400c0234/b36a9362e6b2460590ec4293400c0234.SD-480p-1.2Mbps-100142663.mp4',
+    poster: assets + 'indexes-home-promo-home-1000491824.png?v=1792368222',
   },
 ]);
 

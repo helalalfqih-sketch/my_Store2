@@ -1,17 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, Image, Pressable, RefreshControl,
-  ScrollView, StyleSheet, Text, View,
+  ActivityIndicator, FlatList, RefreshControl, StyleSheet, View,
 } from 'react-native';
 import { fetchCollectionProductsPage, fetchCollections, fetchProductsPage } from './storefrontClient';
 import { categories, colors, promoSlides, promoTiles } from './src/theme/indexesTheme';
 import { CategoryRail, MessageState, ProductCard, SectionHeading } from './src/components/StorefrontUI';
+import { HomepageVideoCarousel, HomepagePromoTiles } from './src/components/HomepageVideoBanners';
+import { HomepageFeaturedCategoryLinks, HomepageServices } from './src/components/HomepageDraftSections';
 
 export default function ProductListScreen({
   mode = 'home', search = '', selectedCategory = null, favorites = [],
-  onCategory, onFavorite, onOpenProduct, onAddToCart, cartBusy = false,
+  onCategory, onFavorite, onOpenProduct, onAddToCart, onOpenCart, cartBusy = false,
 }) {
   const [products, setProducts] = useState([]);
+  const [homeMediaVisible, setHomeMediaVisible] = useState(true);
   const [publishedCollections, setPublishedCollections] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,20 +107,16 @@ export default function ProductListScreen({
     <View>
       {home && (
         <>
-          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.promoStrip} contentContainerStyle={styles.promoStripInner}>
-            {promoSlides.map(slide => (
-              <Pressable key={slide.key} style={styles.promoCard} onPress={() => onCategory(slide.handle)} accessibilityRole="button" accessibilityLabel={slide.title}>
-                <Image source={{ uri: slide.image }} style={styles.promoImage} resizeMode="contain" />
-              </Pressable>
-            ))}
-          </ScrollView>
-          <View style={styles.promoTiles}>
-            {promoTiles.map(tile => (
-              <Pressable key={tile.key} onPress={() => onCategory(tile.handle)} style={styles.promoTile} accessibilityRole="button" accessibilityLabel={tile.title}>
-                <Image source={{ uri: tile.image }} style={styles.tileImage} resizeMode="contain" />
-              </Pressable>
-            ))}
-          </View>
+          <HomepageVideoCarousel
+            slides={promoSlides}
+            visible={homeMediaVisible}
+            onSelect={slide => onCategory(slide.route === 'categories' ? null : slide.handle, slide.route === 'categories' ? 'categories' : 'home')}
+          />
+          <HomepagePromoTiles
+            promos={promoTiles}
+            visible={homeMediaVisible}
+            onSelect={promo => onCategory(promo.route === 'categories' ? null : promo.handle, promo.route === 'categories' ? 'categories' : 'home')}
+          />
           <SectionHeading title="الأقسام الرئيسية" action="عرض الكل" onAction={() => onCategory(null, 'categories')} />
           <CategoryRail onPress={onCategory} selectedHandle={selectedCategory} items={shownCategories} />
         </>
@@ -135,6 +133,7 @@ export default function ProductListScreen({
         action={selectedCategory ? 'كل المنتجات' : null}
         onAction={() => onCategory(null)}
       />
+      {home && <HomepageFeaturedCategoryLinks onCategory={onCategory} />}
       {loading && mode !== 'wishlist' && <ActivityIndicator size="large" color={colors.primary} style={styles.indicator} />}
       {error && <MessageState title="تعذر عرض المنتجات" description={error} onRetry={() => setRefreshVersion(value => value + 1)} />}
     </View>
@@ -150,8 +149,18 @@ export default function ProductListScreen({
       columnWrapperStyle={styles.columns}
       ListHeaderComponent={header}
       onEndReached={loadMore}
+      scrollEventThrottle={250}
+      onScroll={event => {
+        const visible = event.nativeEvent.contentOffset.y < 520;
+        setHomeMediaVisible(previous => previous === visible ? previous : visible);
+      }}
       onEndReachedThreshold={0.5}
-      ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.primary} style={styles.indicator} /> : loadMoreError ? <MessageState title="تعذر تحميل المزيد" description={loadMoreError} onRetry={loadMore} /> : null}
+      ListFooterComponent={(
+        <View>
+          {loadingMore ? <ActivityIndicator color={colors.primary} style={styles.indicator} /> : loadMoreError ? <MessageState title="تعذر تحميل المزيد" description={loadMoreError} onRetry={loadMore} /> : null}
+          {home && <HomepageServices onOpenCart={onOpenCart} />}
+        </View>
+      )}
       ListEmptyComponent={!loading && !error ? (
         <MessageState
           title={mode === 'wishlist' ? 'لم تضف منتجات للمفضلة بعد' : 'لا توجد منتجات لعرضها'}
@@ -182,12 +191,5 @@ const styles = StyleSheet.create({
   container: { backgroundColor: colors.background, flex: 1 },
   list: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 24 },
   columns: { justifyContent: 'space-between' },
-  promoStrip: { marginHorizontal: -12 },
-  promoStripInner: { gap: 9, paddingHorizontal: 12 },
-  promoCard: { width: 310, height: 170, borderRadius: 14, backgroundColor: '#fff', overflow: 'hidden' },
-  promoImage: { width: '100%', height: '100%' },
-  promoTiles: { flexDirection: 'row-reverse', gap: 10, marginTop: 12 },
-  promoTile: { flex: 1, backgroundColor: '#fff', borderRadius: 11, overflow: 'hidden', height: 99 },
-  tileImage: { width: '100%', height: '100%' },
   indicator: { marginVertical: 22 },
 });
