@@ -30,10 +30,13 @@ jobs:
           java-version: "17"
       - name: Validate preinstalled Android SDK
         run: |
-          test -d "$ANDROID_HOME"
-          command -v sdkmanager
-          echo "Using Android SDK: $ANDROID_HOME"
-          ls "$ANDROID_HOME/build-tools"
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          test -d "$SDK_ROOT"
+          test -d "$SDK_ROOT/build-tools"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "Using Android SDK: $SDK_ROOT"
+          ls "$SDK_ROOT/build-tools"
       - name: Install application dependencies
         run: npm install --no-fund --no-audit
       - name: Run JavaScript and checkout API regression tests
