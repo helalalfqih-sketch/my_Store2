@@ -5,7 +5,7 @@ import {
 import { colors, categories, navigationItems } from '../theme/indexesTheme';
 import { discountPercent, firstAvailableVariant, money } from '../theme/catalogUtils';
 
-export function StoreHeader({ search, onSearch, onHome, onCart, cartCount }) {
+export function StoreHeader({ search, onSearch, onHome, onCategories, onCart, cartCount }) {
   return (
     <View style={styles.header}>
       <View style={styles.headerBar}>
@@ -16,7 +16,7 @@ export function StoreHeader({ search, onSearch, onHome, onCart, cartCount }) {
         <Pressable onPress={onHome} accessibilityRole="button" accessibilityLabel="اندكس ستور - الرئيسية">
           <Text style={styles.brand}>INDEXES <Text style={styles.brandLight}>STORE</Text></Text>
         </Pressable>
-        <Text style={styles.headerSymbol}>☰</Text>
+        <Pressable onPress={onCategories} accessibilityRole="button" accessibilityLabel="فتح قائمة الأقسام"><Text style={styles.headerSymbol}>☰</Text></Pressable>
       </View>
       <View style={styles.searchBox}>
         <Text style={styles.searchIcon}>⌕</Text>
@@ -66,28 +66,25 @@ export function BottomNavigation({ selected, onSelect, cartCount }) {
 }
 
 export function CategoryRail({ selectedHandle, onPress, grid = false }) {
-  return (
-    <ScrollView
-      horizontal={!grid}
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[styles.categoryStrip, grid && styles.categoryGrid]}
-    >
-      {categories.map(item => {
-        const active = item.handle === selectedHandle;
-        return (
-          <Pressable
-            key={item.handle}
-            onPress={() => onPress(item.handle)}
-            style={[styles.category, grid && styles.categoryLarge, active && styles.categoryActive]}
-            accessibilityRole="button"
-            accessibilityLabel={'تصفح قسم ' + item.title}
-          >
-            <Image source={{ uri: item.image }} resizeMode="cover" style={styles.categoryImage} accessibilityIgnoresInvertColors />
-            <Text numberOfLines={2} style={[styles.categoryLabel, active && styles.activeText]}>{item.title}</Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+  const cards = categories.map(item => {
+    const active = item.handle === selectedHandle;
+    return (
+      <Pressable
+        key={item.handle}
+        onPress={() => onPress(item.handle)}
+        style={[styles.category, grid && styles.categoryLarge, active && styles.categoryActive]}
+        accessibilityRole="button"
+        accessibilityLabel={'تصفح قسم ' + item.title}
+      >
+        <Image source={{ uri: item.image }} resizeMode="cover" style={styles.categoryImage} accessibilityIgnoresInvertColors />
+        <Text numberOfLines={2} style={[styles.categoryLabel, active && styles.activeText]}>{item.title}</Text>
+      </Pressable>
+    );
+  });
+  return grid ? (
+    <View style={[styles.categoryStrip, styles.categoryGrid]}>{cards}</View>
+  ) : (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryStrip}>{cards}</ScrollView>
   );
 }
 
