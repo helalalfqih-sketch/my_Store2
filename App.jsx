@@ -205,6 +205,7 @@ function App() {
           search={search}
           onSearch={setSearchQuery}
           onHome={() => selectTab('home')}
+          onCategories={() => selectTab('categories')}
           onCart={() => selectTab('cart')}
           cartCount={cartCount}
         />
