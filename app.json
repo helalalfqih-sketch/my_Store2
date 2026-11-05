@@ -3,12 +3,12 @@
     "name": "Indexes Store",
     "slug": "indexes-store",
     "scheme": "indexesstore",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.indexesstore.mobile",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "INTERNET"
       ],
@@ -22,7 +22,9 @@
     },
     "extra": {
       "buildPurpose": "evaluation-debug",
-      "sourceRepo": "helalalfqih-sketch/my_Store2"
+      "sourceRepo": "helalalfqih-sketch/my_Store2",
+      "sourceThemeId": "162512797781",
+      "sourceThemeName": "Indexes — Homepage Video Banners — Draft"
     },
     "splash": {
       "backgroundColor": "#FFFFFF",
