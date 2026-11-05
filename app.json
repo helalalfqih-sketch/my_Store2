@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Indexes Store",
+    "slug": "indexes-store",
+    "scheme": "indexesstore",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.indexesstore.mobile",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.indexesstore.mobile"
+    },
+    "extra": {
+      "buildPurpose": "evaluation-debug",
+      "sourceRepo": "helalalfqih-sketch/my_Store2"
+    }
+  }
+}
