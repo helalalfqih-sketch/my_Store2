@@ -28,8 +28,12 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - name: Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Validate preinstalled Android SDK
+        run: |
+          test -d "$ANDROID_HOME"
+          command -v sdkmanager
+          echo "Using Android SDK: $ANDROID_HOME"
+          ls "$ANDROID_HOME/build-tools"
       - name: Install application dependencies
         run: npm install --no-fund --no-audit
       - name: Run JavaScript and checkout API regression tests
