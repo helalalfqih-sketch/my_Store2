@@ -43,6 +43,9 @@ jobs:
         run: npm run verify
       - name: Generate real Android native project
         run: npx expo prebuild --platform android --no-install --non-interactive
+      - name: Confirm generated Android splash background resource
+        run: |
+          grep -R 'name="splashscreen_background"' android/app/src/main/res/values
       - name: Bundle JS and compile standalone Android evaluation APK
         run: |
           cd android
