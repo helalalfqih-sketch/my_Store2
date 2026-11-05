@@ -80,3 +80,91 @@ jobs:
           path: |
             android/app/build/outputs/apk/release/app-release.apk
             verification/*.txt
+
+  android-emulator-smoke:
+    name: Android emulator E2E (launch, categories and cart)
+    needs: android-debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - name: Check out exact commit
+        uses: actions/checkout@v4
+      - name: Download APK built in this run
+        uses: actions/download-artifact@v4
+        with:
+          name: indexes-store-android-modern-0.2.0
+          path: apk-files
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Enable KVM
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Boot emulator, launch APK and test tabs
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            mkdir -p smoke
+            APK="$(find apk-files -type f -name app-release.apk -print -quit)"
+            test -s "$APK"
+            adb wait-for-device
+            adb install "$APK"
+            adb logcat -c
+            adb shell am start -W -n com.indexesstore.mobile/.MainActivity
+            sleep 16
+            adb shell pidof com.indexesstore.mobile
+            home_ok=0
+            for attempt in 1 2 3 4; do
+              if adb shell uiautomator dump /sdcard/window.xml >/dev/null 2>&1 \
+                && adb pull /sdcard/window.xml smoke/home.xml >/dev/null 2>&1 \
+                && python3 scripts/android-smoke-ui.py --file smoke/home.xml --expect "البحث في المنتجات"; then
+                home_ok=1
+                break
+              fi
+              sleep 3
+            done
+            test "$home_ok" -eq 1
+            adb shell screencap -p /sdcard/home.png
+            adb pull /sdcard/home.png smoke/home.png
+            read -r x y < <(python3 scripts/android-smoke-ui.py --file smoke/home.xml --tap "الأقسام")
+            adb shell input tap "$x" "$y"
+            sleep 3
+            adb shell uiautomator dump /sdcard/window.xml >/dev/null
+            adb pull /sdcard/window.xml smoke/categories.xml
+            python3 scripts/android-smoke-ui.py --file smoke/categories.xml --expect "الأقسام الرئيسية"
+            adb shell screencap -p /sdcard/categories.png
+            adb pull /sdcard/categories.png smoke/categories.png
+            read -r x y < <(python3 scripts/android-smoke-ui.py --file smoke/categories.xml --tap "السلة")
+            adb shell input tap "$x" "$y"
+            sleep 3
+            adb shell uiautomator dump /sdcard/window.xml >/dev/null
+            adb pull /sdcard/window.xml smoke/cart.xml
+            python3 scripts/android-smoke-ui.py --file smoke/cart.xml --expect "سلة التسوق فارغة"
+            adb shell screencap -p /sdcard/cart.png
+            adb pull /sdcard/cart.png smoke/cart.png
+            adb logcat -d -v brief > smoke/logcat.txt
+            if grep -q 'FATAL EXCEPTION' smoke/logcat.txt; then
+              echo "Android recorded a fatal exception."
+              exit 1
+            fi
+            adb shell pidof com.indexesstore.mobile
+            printf '%s\n' "home=PASS" "categories=PASS" "empty_cart=PASS" "fatal_exceptions=NONE" > smoke/result.txt
+      - name: Upload screenshots, UI tree and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: indexes-store-android-emulator-smoke
+          if-no-files-found: warn
+          retention-days: 30
+          path: smoke/

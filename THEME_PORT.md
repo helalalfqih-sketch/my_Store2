@@ -1,57 +1,33 @@
-# Indexes Store: Shopify theme to React Native
+# Modern Shopify Draft → React Native implementation
 
-## Source and scope
+## Source
 
-- Theme repository: https://github.com/helalalfqih-sketch/indexes-shopify-theme
-- Theme baseline: b64cdde7c22c1efe7ac48d920517308691c1e909 (main)
-- Target: my_Store2, branch feat/port-indexes-shopify-theme-to-react-native
-- Connected Shopify store public domain: indexesstore.com
+Shopify Admin theme `gid://shopify/OnlineStoreTheme/162512797781`, name `Indexes — Homepage Video Banners — Draft`, role `UNPUBLISHED`. The live Shopify editor's `templates/index.json` and associated Liquid sections are the **design source of truth**; the older Shopify theme GitHub repository is a historical reference only.
 
-Shopify Liquid, CSS and browser JavaScript cannot run directly in React Native. This change ports the native UI, design tokens and supported flows rather than copying the theme's 537 files.
+## Native mapping
 
-## Ported UI components
-
-| Shopify theme file | Native implementation |
+| Shopify draft | Native implementation |
 |---|---|
-| assets/indexes-brand-identity.css, assets/indexes-unified.css | src/theme/indexesTheme.js, src/components/StorefrontUI.jsx |
-| sections/indexes-mobile-home.liquid | ProductListScreen.jsx: three hero banners, promotional tiles, category cards, product list |
-| snippets/indexes-global-shell.liquid | Native header, search input, bottom navigation |
-| snippets/indexes-product-card.liquid | Product media, prices, discount, wishlist, stock-aware cart action |
-| sections/indexes-product.liquid | ProductDetailScreen.jsx: image gallery, variants, quantity |
-| sections/indexes-cart.liquid | CartScreen.jsx: quantities, removal, summary, Checkout Sheet Kit |
-| sections/indexes-search.liquid | Debounced storefront search and cursor pagination |
-| sections/indexes-account.liquid | External Shopify customer account link (no native OAuth) |
+| `indexes-home-carousel.liquid`, 3 video blocks | `src/components/HomeMedia.jsx` `HomeVideoCarousel` with `expo-av`, posters, 6s rotation, pause/arrows/dots |
+| `indexes-home-promos.liquid` | `HomePromoTiles`, two active tiles (one video), disabled Gifts tile excluded |
+| `indexes-home-categories.liquid` | `AutoCategoryRail`, 11 categories in draft order, optional 4.5s scrolling |
+| `indexes-brand-identity.css` | `indexesTheme.js` with `#E60107` primary, `#BD0006` dark, `#FAFAFA` background |
+| Brand logo/icon, 5-tab navigation | `StorefrontUI.jsx`, Expo vector icons, `assets/indexes-app-512*.png` |
+| Product cards, 24/page, search and variants | `ProductListScreen.jsx`, `ProductDetailScreen.jsx`, Storefront GraphQL client |
+| Cart and checkout | `CartScreen.jsx`, validated browser checkout; no unproven native checkout events |
 
-Identity: primary #E0000B, background #F8F9FA, text #141619, muted #626875, Arabic RTL layout. Promotional images are referenced via the original Shopify CDN, so network access is required. Identity graphics stored in Shopify shop_images are NOT bundled.
+All 4 Shopify video Files were checked through the connected Admin API, and each reports `READY`. Their public MP4 renditions and preview URLs in the native theme match Shopify's records. Their accessibility, actual playback quality and memory/network behavior still require runtime validation. The MP4 files are not bundled in APK.
 
-## API and state
+## Evidence and limits
 
-storefrontClient.js implements Shopify Storefront API version 2026-01: products, collections, search, pagination and carts. Only cart IDs and the wishlist are stored locally using AsyncStorage. Server-side cart data remains authoritative. Network failures display clear errors; cart mutations are not blindly retried.
+- `npm run verify` runs Node regression tests, JSX syntax and relative-import verification.
+- GitHub Actions Android workflow builds a standalone APK and verifies `aapt` application ID `com.indexesstore.mobile`, version `0.2.0`/code `3`, signature (`apksigner`), bundled JS and SHA-256; artifacts include the APK and verification texts.
+- The same workflow has a separate **Android emulator E2E** job asserting launch, categories and empty cart and collecting screenshots. Its result must be checked before claiming successful E2E.
+- Ramus direct-emulator testing was blocked by `quota_exhausted` on 2026-11-05; the monthly quota resets on 2026-12-01. No claim of successful Ramus E2E for 0.2.0.
+- `STOREFRONT_ACCESS_TOKEN` is not configured. Live products/cart, checkout, authenticated accounts and payment are **not** tested. Never embed Shopify Admin/private credentials in a mobile APK.
+- Android release-variant APK is signed with an **ephemeral debug certificate**, unsuitable for production updates. iOS, production signing, recovery from poor network, visual parity and device-specific memory use are unverified.
+- PR #1 is draft and `main` remains unchanged. Do not merge or publish the theme without passing the business integration/security gates.
 
-### Required configuration
+## Regression history
 
-The storefront public domain has been set to indexesstore.com. Before running the app, configure STOREFRONT_ACCESS_TOKEN in storefrontClient.js with the store's PUBLIC Storefront API token. A public token with the correct storefront scopes is required. Never embed an Admin API token, private token or customer OAuth credentials in the mobile app.
-
-The imported theme category handles may not all match current published store collections; confirm them with a functioning Storefront API token.
-
-## Verification
-
-- node --test tests/*.test.mjs: isolated API, timeout, offline, cart mutation, pagination, and catalog utility tests.
-- node scripts/check-syntax.cjs: JavaScript/JSX parsing and local-import checks (requires @babel/parser).
-- GitHub Actions: .github/workflows/native-theme-verification.yml. It verifies code and module structure but does not build or start a native mobile app.
-
-## Outstanding blockers for a running APK
-
-1. Provide a real React Native/Expo native scaffold. Upstream is tutorial snippets with no android/ or ios/ directories, no Metro or Babel configuration.
-2. Install and validate compatible native dependencies, including AsyncStorage and Checkout Kit, and Expo Crypto for the separate OAuth example.
-3. Configure a PUBLIC Storefront token, and validate live products, collections, media, cart, checkout and customer account behavior in a permitted store.
-4. Run Android/iOS build, lint, type checks where applicable, live integration tests and E2E on a real device or emulator.
-5. Review native accessibility, safe areas, currency handling, performance with large catalogs and screenshot fidelity.
-
-No APK, app-store submission, live deployment or verified payment checkout is provided by this change. The main branch remains unchanged until review.
-
-## Android launch crash correction (evaluation 0.1.1)
-
-Android emulator reproduced a fatal launch exception on 0.1.0: ShopifyCheckoutSheetKit native module was not linked. The app entrypoint had imported Checkout Sheet Kit eagerly, so the application crashed before the main screen could render. Version 0.1.1 removes Checkout Kit from the runtime dependency graph, and the native cart screen opens the cart.checkoutUrl in the system browser using a validated HTTPS Shopify checkout URL. Launching the browser **does not prove the order completed**; the cart is deliberately retained until Shopify reports its state through the Storefront API. Native Checkout Kit integration can be reintroduced only after the Android module is linked and the device tests prove it works.
-
-This build uses a new ephemeral Android debug signing key. An installed 0.1.0 evaluation build may have a different signature and block an in-place update; uninstall the previous test APK first and reinstall 0.1.1. Never treat this signing key as a production update identity. Products still require a configured **public** Storefront API token.
+0.1.0 crashed on launch because the native `ShopifyCheckoutSheetKit` module was not linked. 0.1.1 removed the eager import and uses browser checkout. 0.2.0 retains that fix and ports the newer Shopify video-homepage draft.

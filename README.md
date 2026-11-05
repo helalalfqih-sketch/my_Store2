@@ -1,52 +1,35 @@
-# Mobile Storefront — React Native
+# Indexes Store — Native Android
 
-> **Indexes Store native UI port:** The Shopify Liquid theme has been adapted into React Native screens on this branch. See [THEME_PORT.md](THEME_PORT.md) for implemented flows, verification, configuration and build blockers. This is still **not** a standalone runnable Android/iOS project.
+Expo SDK 50 / React Native 0.73 storefront for `indexesstore.com`.
+Design reference: **unpublished Shopify Admin theme 162512797781** (Indexes — Homepage Video Banners — Draft), not the older upstream snippets.
 
-Companion code for [shopify.dev](https://shopify.dev) tutorials covering the Storefront API, [Checkout Kit for React Native](https://github.com/Shopify/checkout-sheet-kit-react-native), and Customer Account API authentication.
+## Implemented
 
-> **This repository is not a standalone runnable app.** It contains the source files referenced inline by the tutorials. To use them, drop the files into an existing React Native project and add the dependencies listed below.
+- Native three-video homepage carousel (6-second autoplay, pause, arrows, accessible slide dots and posters).
+- Shopify's two **enabled** promo tiles: one image, one muted video. Disabled Gifts promo is excluded.
+- Shopify artwork and icon, Arabic RTL search/header, eleven collections in the draft's order, auto-scrolling 4.5-second category strip.
+- Product listing (24/page), search, wishlist, product detail and persistent cart via Shopify Storefront API.
+- External browser checkout for validated Shopify cart URL; never assumes checkout completed.
 
-## Tutorials
+## Build and verify
 
-- [Build a mobile storefront](https://shopify.dev/docs/storefronts/mobile/build-mobile-storefront)
-- [Embed Checkout Kit](https://shopify.dev/docs/storefronts/mobile/checkout-kit)
-- [Authenticate checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/authenticate-checkouts)
-- [Accelerated checkouts](https://shopify.dev/docs/storefronts/mobile/checkout-kit/accelerated-checkouts)
+```sh
+npm install
+npm run verify
+npx expo prebuild --platform android --no-install
+cd android && ./gradlew :app:assembleRelease
+```
 
-## What's included
+GitHub Actions `.github/workflows/android-debug-apk.yml` builds an Android 0.2.0 APK with bundled JS, validates its package, SHA-256 and signature, and includes an emulator smoke-test job that checks launch/categories/cart and captures screenshots. Check each job's status; native compilation alone does not demonstrate correct execution.
 
-| File | Description |
-|---|---|
-| `storefrontClient.js` | Storefront API client — product queries, cart creation, cart permalinks |
-| `ProductListScreen.jsx` | Product list with Add to Cart |
-| `CartScreen.jsx` | Checkout Kit integration with event handling |
-| `App.jsx` | App entry point with `ShopifyCheckoutSheetProvider` |
-| `authClient.js` | OAuth + PKCE flow against the Customer Account API |
-| `AcceleratedCheckout*.jsx` | Accelerated checkout buttons, configuration, customization, events, and render-state handling |
+Android app ID: `com.indexesstore.mobile`, version `0.2.0`, versionCode `3`. **Evaluation only**: signed with an ephemeral debug certificate, not a production identity. Earlier preview APKs may require uninstalling before installing this one.
 
-## Use these snippets in your project
+## Required integration
 
-1. Copy the relevant files into your React Native project's source tree.
-2. Install the npm dependencies imported by these files:
+`storefrontClient.js` still contains the placeholder `STOREFRONT_ACCESS_TOKEN = 'your-public-storefront-token'`. Only configure a *public* Storefront API token, never an Admin/private token. Without it, the catalog and cart fail visibly even though the UI can render.
 
-   ```sh
-   npm install @shopify/checkout-sheet-kit expo-crypto
-   ```
+Four public Shopify CDN videos are streamed rather than packaged in the APK. Actual video performance, live cart/payment flows, production signing, iOS and real-device behavior are not yet proven. Shopify checkout currently opens in the browser because the native Checkout Sheet Kit failed at app launch in 0.1.0. The legacy `AcceleratedCheckout*.jsx` tutorial examples are not runtime screens.
 
-3. In `storefrontClient.js`, replace `{shop}.myshopify.com` with your store domain and add your Storefront API access token.
-4. Wrap your app's root in `ShopifyCheckoutSheetProvider` (see `App.jsx`).
+See [THEME_PORT.md](THEME_PORT.md) for source traceability, verification and blockers.
 
-## Requirements
-
-- React Native 0.70 or later
-- iOS 13 or later / Android SDK 23 or later
-- A [Shopify development store](https://shopify.dev/docs/storefronts/headless/building-with-the-storefront-api/getting-started) with at least one product
-- A Storefront API access token with `unauthenticated_read_product_listings` and `unauthenticated_write_checkouts` scopes
-
-## Contributing
-
-This repository doesn't accept issues or external contributions. It exists as a companion to the tutorials linked above. If you find an issue with the tutorial content, use the feedback form on the tutorial page.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE.md).
+License: [LICENSE.md](LICENSE.md).
