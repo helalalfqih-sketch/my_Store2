@@ -37,3 +37,7 @@ License: [LICENSE.md](LICENSE.md).
 ## Installing evaluation APK 0.2.1
 
 An older `0.2.0` APK was built without Shopify Storefront credentials. It will not update its embedded JavaScript when the GitHub repository changes. Install APK `0.2.1` (build 4). Because CI generates a different ephemeral debug signing certificate, you may need to uninstall older evaluation builds first. **Uninstalling deletes locally saved wishlist/cart IDs**; export or preserve any important device data before uninstalling. This is not a production signing/update strategy.
+
+## Finding products in the mobile UI
+
+On the native homepage, scroll **below the video banners and category carousel** to see the live `منتجات مختارة لك` grid. Version `0.2.1` embeds the connected public Storefront token and the emulator test confirms visible product cards with real images/prices. Older `0.2.0` test builds did not contain that configuration.

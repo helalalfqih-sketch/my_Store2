@@ -56,12 +56,24 @@ test "$products_ok" -eq 1 || {
 adb shell screencap -p /sdcard/products.png
 adb pull /sdcard/products.png smoke/products.png
 
-read -r x y < <(python3 scripts/android-smoke-ui.py --file smoke/home.xml --tap "الأقسام")
-adb shell input tap "$x" "$y"
-sleep 3
-adb shell uiautomator dump /sdcard/window.xml >/dev/null
-adb pull /sdcard/window.xml smoke/categories.xml
-python3 scripts/android-smoke-ui.py --file smoke/categories.xml --expect "الأقسام الرئيسية"
+# Inertia from scrolling the product list can consume the first tab tap.
+# Resolve the tab's current bounds from a fresh Android UI tree and retry,
+# then assert the categories-only subtitle (not the shared homepage heading).
+categories_ok=0
+for attempt in 1 2 3 4; do
+  adb shell uiautomator dump /sdcard/window.xml >/dev/null
+  adb pull /sdcard/window.xml smoke/before-categories.xml >/dev/null
+  read -r x y < <(python3 scripts/android-smoke-ui.py --file smoke/before-categories.xml --tap "الأقسام")
+  adb shell input tap "$x" "$y"
+  sleep 3
+  adb shell uiautomator dump /sdcard/window.xml >/dev/null
+  adb pull /sdcard/window.xml smoke/categories.xml >/dev/null
+  if python3 scripts/android-smoke-ui.py --file smoke/categories.xml --expect "تسوق حسب القسم المناسب لك"; then
+    categories_ok=1
+    break
+  fi
+done
+test "$categories_ok" -eq 1 || { echo "Could not switch to the categories tab"; exit 22; }
 adb shell screencap -p /sdcard/categories.png
 adb pull /sdcard/categories.png smoke/categories.png
 
