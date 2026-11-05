@@ -1,4 +1,4 @@
-name: Android debug APK (evaluation only)
+name: Android standalone evaluation APK (debug signed)
 
 on:
   push:
@@ -43,19 +43,19 @@ jobs:
         run: npm run verify
       - name: Generate real Android native project
         run: npx expo prebuild --platform android --no-install --non-interactive
-      - name: Compile debug APK with native Android toolchain
+      - name: Bundle JS and compile standalone Android evaluation APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew :app:assembleDebug --no-daemon --max-workers=2 --stacktrace
+          ./gradlew :app:assembleRelease --no-daemon --max-workers=2 --stacktrace
       - name: Verify APK, identity and signer
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p verification
-          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          APK="android/app/build/outputs/apk/release/app-release.apk"
           test -s "$APK"
-          printf 'commit_sha=%s\nbuild_type=debug\nsigner_note=Android debug certificate (not a production signing identity)\n' "$GITHUB_SHA" > verification/build-info.txt
+          printf 'commit_sha=%s\nbuild_type=release-variant-debug-signed-for-evaluation\nsigner_note=Android debug certificate (not a production signing identity); this APK is for fresh installations only\n' "$GITHUB_SHA" > verification/build-info.txt
           sha256sum "$APK" > verification/apk-sha256.txt
           AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)
@@ -71,9 +71,9 @@ jobs:
       - name: Publish installable debug APK and verification report
         uses: actions/upload-artifact@v4
         with:
-          name: indexes-store-android-debug-\${{ github.sha }}
+          name: indexes-store-android-evaluation-\${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/app-release.apk
             verification/*.txt
