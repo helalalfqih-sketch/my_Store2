@@ -2,7 +2,7 @@
 // A Storefront PUBLIC access token is intended for client apps; never put
 // Admin API credentials or customer account secrets in this file.
 const SHOP_DOMAIN = 'indexesstore.com';
-const STOREFRONT_ACCESS_TOKEN = 'your-public-storefront-token';
+const STOREFRONT_ACCESS_TOKEN = '4147b077266cf56ce89529fe90c149d8';
 const API_VERSION = '2026-01';
 
 const PRODUCT_FIELDS = [
