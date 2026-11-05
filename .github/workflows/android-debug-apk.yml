@@ -67,14 +67,14 @@ jobs:
           "$AAPT" dump badging "$APK" > verification/apk-badging.txt
           "$APKSIGNER" verify --verbose --print-certs "$APK" > verification/apk-signature.txt
           grep "package: name='com.indexesstore.mobile'" verification/apk-badging.txt
-          grep "versionName='0.2.0'" verification/apk-badging.txt
+          grep "versionName='0.2.1'" verification/apk-badging.txt
           unzip -l "$APK" > verification/apk-contents.txt
           grep -q 'assets/index.android.bundle' verification/apk-contents.txt
           echo "APK verified against expected Android application ID and JS bundle"
       - name: Publish installable debug APK and verification report
         uses: actions/upload-artifact@v4
         with:
-          name: indexes-store-android-modern-0.2.0
+          name: indexes-store-android-modern-0.2.1
           if-no-files-found: error
           retention-days: 30
           path: |
@@ -82,7 +82,7 @@ jobs:
             verification/*.txt
 
   android-emulator-smoke:
-    name: Android emulator E2E (launch, categories and cart)
+    name: Android E2E (live catalog, categories and cart)
     needs: android-debug
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -94,7 +94,7 @@ jobs:
       - name: Download APK built in this run
         uses: actions/download-artifact@v4
         with:
-          name: indexes-store-android-modern-0.2.0
+          name: indexes-store-android-modern-0.2.1
           path: apk-files
       - name: Java 17
         uses: actions/setup-java@v4

@@ -11,9 +11,19 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--expect")
     group.add_argument("--tap")
+    group.add_argument("--expect-product", action="store_true")
     args = parser.parse_args()
     root = ET.parse(args.file).getroot()
     nodes = [n.attrib for n in root.iter("node")]
+    if args.expect_product:
+        products = [node for node in nodes if node.get("clickable") == "true"
+                    and node.get("content-desc", "").startswith("عرض ")
+                    and node.get("content-desc") != "عرض الكل"]
+        if not products:
+            print("No Shopify product cards visible on the Android screen", file=sys.stderr)
+            raise SystemExit(1)
+        print("Visible Shopify product cards:", len(products))
+        return
     if args.expect:
         if not any(args.expect in (n.get("text", "") + " " + n.get("content-desc", "")) for n in nodes):
             print("Missing text: " + args.expect, file=sys.stderr)

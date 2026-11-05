@@ -21,13 +21,13 @@ All 4 Shopify video Files were checked through the connected Admin API, and each
 ## Evidence and limits
 
 - `npm run verify` runs Node regression tests, JSX syntax and relative-import verification.
-- GitHub Actions Android workflow builds a standalone APK and verifies `aapt` application ID `com.indexesstore.mobile`, version `0.2.0`/code `3`, signature (`apksigner`), bundled JS and SHA-256; artifacts include the APK and verification texts.
-- The same workflow has a separate **Android emulator E2E** job asserting launch, categories and empty cart and collecting screenshots. Its result must be checked before claiming successful E2E.
-- Ramus direct-emulator testing was blocked by `quota_exhausted` on 2026-11-05; the monthly quota resets on 2026-12-01. No claim of successful Ramus E2E for 0.2.0.
-- `STOREFRONT_ACCESS_TOKEN` is not configured. Live products/cart, checkout, authenticated accounts and payment are **not** tested. Never embed Shopify Admin/private credentials in a mobile APK.
+- GitHub Actions Android workflow builds a standalone APK and verifies `aapt` application ID `com.indexesstore.mobile`, version `0.2.1`/code `3`, signature (`apksigner`), bundled JS and SHA-256; artifacts include the APK and verification texts.
+- The same workflow has a separate **Android emulator E2E** job asserting launch, at least one live visible product card, categories and empty cart, and collecting screenshots. Its result must be checked before claiming successful E2E.
+- Ramus direct-emulator testing was blocked by `quota_exhausted` on 2026-11-05; the monthly quota resets on 2026-12-01. No claim of successful Ramus E2E for 0.2.1.
+- `STOREFRONT_ACCESS_TOKEN` is now configured with a public Storefront token by the merchant. GitHub Actions read-only Storefront API verification succeeded (products and 20 collections). Native Android product-card rendering is checked in a separate E2E gate. Cart mutations, checkout, authenticated accounts and payment are **not** tested. Never embed Shopify Admin/private credentials in a mobile APK.
 - Android release-variant APK is signed with an **ephemeral debug certificate**, unsuitable for production updates. iOS, production signing, recovery from poor network, visual parity and device-specific memory use are unverified.
 - PR #1 is draft and `main` remains unchanged. Do not merge or publish the theme without passing the business integration/security gates.
 
 ## Regression history
 
-0.1.0 crashed on launch because the native `ShopifyCheckoutSheetKit` module was not linked. 0.1.1 removed the eager import and uses browser checkout. 0.2.0 retains that fix and ports the newer Shopify video-homepage draft.
+0.1.0 crashed on launch because the native `ShopifyCheckoutSheetKit` module was not linked. 0.1.1 removed the eager import and uses browser checkout. 0.2.1 retains that fix and ports the newer Shopify video-homepage draft.

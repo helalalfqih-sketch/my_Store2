@@ -34,6 +34,28 @@ test "$home_ok" -eq 1 || { echo "Homepage did not become accessible"; exit 20; }
 adb shell screencap -p /sdcard/home.png
 adb pull /sdcard/home.png smoke/home.png
 
+# Confirm the Android app, not merely a CI HTTP client, renders real products.
+# The Shopify storefront homepage has large video/category rails above its FlatList.
+# Scroll vertically until at least one accessible native ProductCard appears.
+products_ok=0
+for attempt in 1 2 3 4 5 6 7; do
+  if adb shell uiautomator dump /sdcard/products.xml >/dev/null 2>&1 \
+    && adb pull /sdcard/products.xml smoke/products.xml >/dev/null 2>&1 \
+    && python3 scripts/android-smoke-ui.py --file smoke/products.xml --expect-product; then
+    products_ok=1
+    break
+  fi
+  adb shell input swipe 160 505 160 180 400
+  sleep 2
+done
+test "$products_ok" -eq 1 || {
+  echo "Shopify is reachable, but Android did not render a product card."
+  echo "Inspect smoke/products.xml and smoke/logcat.txt."
+  exit 21
+}
+adb shell screencap -p /sdcard/products.png
+adb pull /sdcard/products.png smoke/products.png
+
 read -r x y < <(python3 scripts/android-smoke-ui.py --file smoke/home.xml --tap "الأقسام")
 adb shell input tap "$x" "$y"
 sleep 3
@@ -58,5 +80,5 @@ if grep -q 'FATAL EXCEPTION' smoke/logcat.txt; then
   exit 30
 fi
 adb shell pidof com.indexesstore.mobile
-printf '%s\n' "home=PASS" "categories=PASS" "empty_cart=PASS" "fatal_exceptions=NONE" > smoke/result.txt
+printf '%s\n' "catalog_products=PASS" "home=PASS" "categories=PASS" "empty_cart=PASS" "fatal_exceptions=NONE" > smoke/result.txt
 echo "Native Android smoke tests passed."
