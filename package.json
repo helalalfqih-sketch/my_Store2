@@ -10,7 +10,7 @@
     "check:syntax": "node scripts/check-syntax.cjs",
     "verify": "npm run test && npm run check:syntax",
     "prebuild": "expo prebuild --platform android --no-install",
-    "build:android:debug": "cd android && ./gradlew :app:assembleDebug"
+    "build:android:evaluation": "cd android && ./gradlew :app:assembleRelease"
   },
   "dependencies": {
     "@shopify/checkout-sheet-kit": "^3.0.0",
@@ -18,7 +18,7 @@
     "react-native": "0.73.6",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "expo-crypto": "~12.8.1",
-    "expo": "~50.0.22"
+    "expo": "^50.0.0"
   },
   "devDependencies": {
     "@babel/parser": "^7.26.0",
