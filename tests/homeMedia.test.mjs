@@ -17,7 +17,7 @@ test("draft disabled gifts tile is omitted and video promo is configured", () =>
   assert.equal(isTrustedShopifyMedia(promoTiles[1].video), true);
 });
 
-test('the draft's red and soft neutral identity and motion timing are preserved', () => {
+test('draft red and soft neutral identity and motion timing are preserved', () => {
   assert.equal(colors.primary, '#E60107');
   assert.equal(colors.background, '#FAFAFA');
   assert.equal(homeMotion.bannerIntervalMs, 6000);
